@@ -24,9 +24,9 @@ class CrawlerBaike:
         * run() # 总业务逻辑
      """
 
-    def __init__(self, url: str):
+    def __init__(self, redis_url: str):
         self.redis = None
-        self.url = url
+        self.url = redis_url
         self.loop = asyncio.get_event_loop()
         self.url_set = "URL"
         self.url_queue = "URL_QUEUE"

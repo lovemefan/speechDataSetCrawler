@@ -15,8 +15,8 @@ from website.baike.crawlerBase import CrawlerBaike
 
 class BaiduBaike(CrawlerBaike):
     """收集百度百科并链接存入数据库，并爬取链接中的文本"""
-    def __init__(self, url: str):
-        super().__init__(url)
+    def __init__(self, redis_url: str):
+        super().__init__(redis_url)
 
     async def crawler_baike_content(self):
         # todo 爬取内容

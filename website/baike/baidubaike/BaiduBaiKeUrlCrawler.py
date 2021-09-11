@@ -5,6 +5,8 @@
 # @File : BaiduBaikeCrawler.py
 import asyncio
 import re
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import Process
 
 import aiohttp
 
@@ -24,8 +26,8 @@ class BaiduBaike(CrawlerBaike):
         html = await self.get_request(url, session)
         url_list = re.findall('((https://baike.baidu.com)?/item/?.*?)"', html)
 
-        url_list = [item[0].replace("\\/", "/") if len(item[1]) != 0
-                    else "https://baike.baidu.com%s" % item[0].replace("\\/", "/").replace("\\", "") for item in url_list]
+        url_list = [item[0].replace("\\/", "/").replace("amp;", "") if len(item[1]) != 0
+                    else "https://baike.baidu.com%s" % item[0].replace("\\/", "/").replace("\\", "").replace("amp;", "") for item in url_list]
         # 去重
         url_list = set(url_list)
         return url_list
@@ -34,13 +36,22 @@ class BaiduBaike(CrawlerBaike):
         async with aiohttp.ClientSession() as session:
             while await self.redis.llen(self.url_queue):
                 top_url = await asyncio.wait_for(self.redis.lpop(self.url_queue), 10)
-                url_list = await self.get_baike_url_list(str(top_url, encoding="utf-8"), session)
-                print(f"以获取{len(url_list)}条链接")
-                for url in url_list:
-                    print(f"正在加入{url}")
-                    await self.add_url_to_redis(url)
+                try:
+                    url_list = await self.get_baike_url_list(str(top_url, encoding="utf-8"), session)
+                    print(f"已获取{len(url_list)}条链接")
+                    for url in url_list:
+                        print(f"正在加入{url}")
+                        await self.add_url_to_redis(url)
+                except aiohttp.client_exceptions.ClientResponseError:
+                    continue
 
 
 if __name__ == '__main__':
-    baidubaike = BaiduBaike("redis://localhost/0")
-    baidubaike.run()
+
+    baidu = BaiduBaike("redis://localhost/0")
+    baidu.run()
+
+
+
+
+

@@ -3,6 +3,7 @@
 # @Author : lovemefan
 # @Email : lovemefan@outlook.com
 # @File : export.py
+import argparse
 import asyncio
 import math
 
@@ -29,6 +30,9 @@ async def export(step: int):
 
 
 if __name__ == '__main__':
-    asyncio.run(export(600000))
+    parser = argparse.ArgumentParser(description="Export to file")
+    parser.add_argument('--url_number', type=str, required=True, help="导出每个文件或每个队列的链接数量")
+    args = parser.parse_args()
+    asyncio.run(export(args.url_number))
 
 

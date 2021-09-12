@@ -3,6 +3,7 @@
 # @Author : lovemefan
 # @Email : lovemefan@outlook.com
 # @File : BaiduBaikeCrawler.py
+import argparse
 import asyncio
 import re
 from bs4 import BeautifulSoup
@@ -53,10 +54,12 @@ class BaiduBaiKeCrawler(CrawlerBaike):
             url = str(url, encoding="utf-8")
             html = await self.get_request(url, None)
             soup = BeautifulSoup(html)
-            result = list(set([item.text for item in soup.select(".para")]))
+            result = list(set([item.text.strip() for item in soup.select(".para")]))
 
             for item in result:
-                await self.submit(item.replace('\n', ''))
+                if len(re.findall("^\d+$", item)) == 0:
+                    # 如果取出的数据为不为纯数字则提交，否则丢弃
+                    await self.submit(item.replace('\n', ''))
 
     def run(self):
         """运行方法
@@ -73,10 +76,15 @@ class BaiduBaiKeCrawler(CrawlerBaike):
 
 
 if __name__ == '__main__':
-    # 固定url
-    redis_url = "redis://localhost/0"
-    # 每个人任务不一样
-    task = "URL_QUEUE_8"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--redis", required=True, type=str, help="connection url of redis")
+    parser.add_argument("--task", required=True, type=str, help="task name of queue")
 
+    args = parser.parse_args()
+
+    # 固定url
+    redis_url = args.redis
+    # 每个人任务不一样
+    task = args.task
     baidubaike = BaiduBaiKeCrawler(redis_url, task)
     baidubaike.run()

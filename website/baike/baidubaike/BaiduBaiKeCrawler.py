@@ -4,7 +4,8 @@
 # @Email : lovemefan@outlook.com
 # @File : BaiduBaikeCrawler.py
 import asyncio
-
+import re
+from bs4 import BeautifulSoup
 from website.baike.crawlerBase import CrawlerBaike
 
 """
@@ -46,10 +47,16 @@ class BaiduBaiKeCrawler(CrawlerBaike):
         爬取成功后需要提交数据, 调用
         self.submit(text)
         """
-        url = await self.get_data_from_queue()
-        # 转成utf-8
-        url = str(url, encoding="utf-8")
-        print(url)
+        while await self.redis.llen(self.task_queue):
+            url = await self.get_data_from_queue()
+            # 转成utf-8
+            url = str(url, encoding="utf-8")
+            html = await self.get_request(url, None)
+            soup = BeautifulSoup(html)
+            result = list(set([item.text for item in soup.select(".para")]))
+
+            for item in result:
+                await self.submit(item.replace('\n', ''))
 
     def run(self):
         """运行方法
@@ -67,9 +74,9 @@ class BaiduBaiKeCrawler(CrawlerBaike):
 
 if __name__ == '__main__':
     # 固定url
-    redis_url = "redis:222.197.201.149/0"
+    redis_url = "redis://localhost/0"
     # 每个人任务不一样
-    task = "URL_QUEUE_2"
+    task = "URL_QUEUE_8"
 
     baidubaike = BaiduBaiKeCrawler(redis_url, task)
     baidubaike.run()

@@ -39,7 +39,7 @@ class CrawlerBaike:
         if self.redis is None:
             self.redis: Redis = await aioredis.from_url(self.url)
 
-    async def get_request(self, url: str, session: None) -> ClientResponse:
+    async def get_request(self, url: str, session=None) -> ClientResponse:
         """
         get 网络请求
         :param session:
@@ -53,7 +53,6 @@ class CrawlerBaike:
         else:
             async with session.get(url) as response:
                 return await response.text()
-
 
     @abc.abstractmethod
     async def crawler_baike_content(self):
@@ -92,14 +91,11 @@ class CrawlerBaike:
                     self.crawler_baike_urls(),
                     self.crawler_baike_content()
                 ]
-                )
+            )
         )
-
-
 
 
 if __name__ == '__main__':
     # 测试
     crawler = CrawlerBaike("redis://localhost/0")
     crawler.run()
-

@@ -6,6 +6,8 @@
 import argparse
 import asyncio
 import re
+
+import aiohttp
 from bs4 import BeautifulSoup
 from website.baike.crawlerBase import CrawlerBaike
 
@@ -48,18 +50,19 @@ class BaiduBaiKeCrawler(CrawlerBaike):
         爬取成功后需要提交数据, 调用
         self.submit(text)
         """
-        while await self.redis.llen(self.task_queue):
-            url = await self.get_data_from_queue()
-            # 转成utf-8
-            url = str(url, encoding="utf-8")
-            html = await self.get_request(url, None)
-            soup = BeautifulSoup(html)
-            result = list(set([item.text.strip() for item in soup.select(".para")]))
+        async with aiohttp.ClientSession() as session:
+            while await self.redis.llen(self.task_queue):
+                url = await self.get_data_from_queue()
+                # 转成utf-8
+                url = str(url, encoding="utf-8")
+                html = await self.get_request(url, session)
+                soup = BeautifulSoup(html, "html.parser")
+                result = list(set([item.text.strip() for item in soup.select(".para")]))
 
-            for item in result:
-                if len(re.findall("^\d+$", item)) == 0:
-                    # 如果取出的数据为不为纯数字则提交，否则丢弃
-                    await self.submit(item.replace('\n', ''))
+                for item in result:
+                    if len(re.findall("^[a-zA-Z0-9\ ]+$", item)) == 0:
+                        # 如果取出的数据为不为纯数字英文则提交，否则丢弃
+                        await self.submit(item.replace('\n', ''))
 
     def run(self):
         """运行方法
